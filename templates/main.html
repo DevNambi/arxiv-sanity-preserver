@@ -16,6 +16,15 @@ body {
 	font-size: 14px;
 	color: #900;
 }
+.aa {
+	font-size: 14px;
+	color: #900;
+}
+.as a:link{ text-decoration: none; color: #900; }
+.as a:visited{ text-decoration: none; color: #900; }
+.as a:hover{ text-decoration: none; color: #F00; }
+.as a:active{ text-decoration: none; color: #900; }
+
 .ts {
 	font-weight: bold;
 	font-size: 16px;
@@ -77,10 +86,13 @@ h1 {
 
 .apaper {
 	margin-top: 25px;
-	min-height: 300px;
+	/* min-height: 300px; */
+}
+.animg {
+	text-align: left;
 }
 .apaper img {
-   width: 100%;
+   height: 156px;
 }
 .paperdesc {
 	float: left;
@@ -95,34 +107,10 @@ h1 {
 	cursor: pointer;
 	text-decoration: underline;
 }
-#titdiv a:link{ color: white; }
-#titdiv a:visited{ color: white; }
-
-#maindiv a:link{ color: #666; }
-#maindiv a:visited{ color: #600; }
-
-.t0 { color: #000;}
-.t1 { color: #C00;}
-.t2 { color: #0C0;}
-.t3 { color: #00C;}
-.t4 { color: #AA0;}
-.t5 { color: #C0C;}
-.t6 { color: #0CC;}
-
 .sim {
 	cursor: pointer;
 	text-decoration: underline;
 	display: block;
-}
-
-.abstrholder {
-	background-color: #DFD;
-	border: 1px solid #BDB;
-	font-size: 12px;
-	padding: 10px;
-	border-radius: 5px;
-	display: none; /* so that these are hidden initially */
-	margin-bottom: 5px;
 }
 input {
   border: 5px solid white; 
@@ -146,7 +134,27 @@ input {
 	margin-top: 10px;
   text-align: center;
 }
+.msg {
+	background-color: #EEF;
+	padding: 10px;
+	border-radius: 10px;
+}
+#search_hint {
+	text-align: center;
+	margin-bottom: 10px;
+	font-size: 14px;
+}
+#search_hint a {
+	margin-right: 10px;
+}
+#search_hint a:link{ color: #777; }
+#search_hint a:visited{ color: #777; }
+#search_hint a:hover{ color: #777; }
+#search_hint a:active{ color: #777; }
 
+form {
+	margin-bottom: 5px;
+}
 </style>
 
 <script src="/static/jquery-1.8.3.min.js"></script>
@@ -155,6 +163,7 @@ input {
 
 // passed in from flask as json
 var papers = {{ papers | tojson }};
+var collapsed = {{ collapsed }}
 
 var urlq = '';
 
@@ -182,12 +191,33 @@ var QueryString = function () {
     return query_string;
 }();
 
+function build_authors_html(authors) {
+	var res = '';
+	for(var i=0,n=authors.length;i<n;i++) {
+		var link = '/search?q=' + authors[i].replace(/ /g, "+");
+		res += '<a href="' + link + '" class="aa">' + authors[i] + '</a>';
+		if(i<n-1) res += ', ';
+	}
+	return res;
+}
+
 // this permutes the divs (that contian 1 paper each) based on a custom sorting function
 // in our case, this sort is done as dot product based on the choices[] array
 // here we are guaranteed ldadist[] already sums to 1 for every paper
 function arrangeDivs() {
 
   var root = d3.select("#rtable");
+
+  if(collapsed === 1) {
+  	root.append('div').classed('msg', true).html('showing a collapsed view of the most recent 100 papers in the database.')
+  	// also display a search hint on top
+  	var sdiv = d3.select('#search_hint');
+  	sdiv.append('span').html('e.g.: ');
+  	sdiv.append('a').attr('href', '/search?q=Geoffrey+Hinton').html('Geoffrey Hinton');
+  	sdiv.append('a').attr('href', '/search?q=image+captioning').html('image captioning');
+  	sdiv.append('a').attr('href', '/search?q=deep+reinforcement+learning').html('deep reinforcement learning');
+  }
+
   for(var i=0,n=papers.length;i<n;i++) {
   	var p = papers[i];
   	var div = root.append('div').classed('apaper', true).attr('id', p.pid);
@@ -195,7 +225,7 @@ function arrangeDivs() {
   	var tdiv = div.append('div').classed('paperdesc', true);
   	tdiv.append('span').classed('ts', true).html(p.title);
   	tdiv.append('br');
-  	tdiv.append('span').classed('as', true).html(p.authors.join(', '));
+  	tdiv.append('span').classed('as', true).html(build_authors_html(p.authors));
   	tdiv.append('br');
   	tdiv.append('span').classed('ds', true).html(p.published_time);
   	tdiv.append('span').classed('cs', true).html(p.tags.join(' | '));
@@ -208,9 +238,15 @@ function arrangeDivs() {
 
   	ldiv.append('span').classed('sim', true).attr('id', 'sim'+p.pid).html('[rank by tf-idf similarity to this]');
 
-  	div.append('img').attr('src', p.img);
+  	div.append('div').attr('style', 'clear:both');
 
-  	div.append('span').classed('tt', true).html(p.abstract);
+  	if(typeof p.img !== 'undefined') {
+  		div.append('div').classed('animg', true).append('img').attr('src', p.img);
+  	}
+
+  	if(typeof p.abstract !== 'undefined') {
+  		div.append('span').classed('tt', true).html(p.abstract);
+  	}
   }
 }
 
@@ -240,16 +276,19 @@ $(document).ready(function(){
 <body>
 <a href="https://github.com/karpathy/arxiv-sanity-preserver"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png"></a>
 
-<div id ="titdiv">
-<h1>Arxiv Sanity Preserver</h1>
-Because things are seriously getting out of hand.<br>
-Serving last {{ numpapers }} papers from cv.CV/cv.LG.
-</div>
+<a href="/" style="text-decoration:none">
+	<div id ="titdiv">
+	<h1>Arxiv Sanity Preserver</h1>
+	Because things are seriously getting out of hand.<br>
+	Serving last {{ numpapers }} papers from cs.[CV|CL|LG]
+	</div>
+</a>
 
 <div id="sbox">
   <form action="/search" method="get">
   	<input name="q" type="text" id="qfield">
   </form>
+  <div id="search_hint"></div>
 </div>
 
 <div id="maindiv">

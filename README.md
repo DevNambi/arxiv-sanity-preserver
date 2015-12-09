@@ -9,8 +9,24 @@ Main functionality is a search feature, and most useful is that you can click "s
 
 ![user interface](https://raw.github.com/karpathy/arxiv-sanity-preserver/master/ui.jpeg)
 
+### Find it online
+
+This code is currently running live at [www.arxiv-sanity.com/](http://www.arxiv-sanity.com/). Right now it's serving 10400 arxiv papers from cs.[CV|CL|LG] over the last ~3 years, and more will be added in time as I build this out.
+
 ### Dependencies
-You will need numpy, feedparser (to process xml files), scikit learn (for tfidf vectorizer), and flask (for serving the results)
+You will need numpy, feedparser (to process xml files), scikit learn (for tfidf vectorizer), and flask (for serving the results), and tornado (if you want to run the flask server in production). Also dateutil, and scipy. Most of these are easy to get through `pip`, e.g.:
+
+```bash
+$ virtualenv env                # optional: use virtualenv
+$ source env/bin/activate       # optional: use virtualenv
+$ pip install feedparser        # only if you want to scrape arxiv
+$ pip install numpy             
+$ pip install scipy             
+$ pip install scikit-learn      # needed for sparse arrays
+$ pip install python-dateutil   # only in serve.py for some date utils
+$ pip install flask             # only in serve.py
+$ pip install tornado           # only in serve.py
+```
 
 ### Ugly I don't have time processing pipeline
 
@@ -26,7 +42,7 @@ Requires reading code and getting hands dirty. Magic numbers throughout code.
 
 ### Prebuilt database
 
-If you'd like to browse arxiv papers from last 3 months you can download the result of running the above steps 1-6, and only run 7. to browse. [Here is the download link.](http://cs.stanford.edu/people/karpathy/arxiv_cv_lg_sep_to_dec.zip). Unzip in root folder and fire up flask with `serve.py`. Should work I think.
+If you'd like to browse the 10400 arxiv papers currently running in the demo, you can download the prebuilt database. This means you can skip steps 1-6 above and simply run the server (step 7). [Here is the download link.](http://cs.stanford.edu/people/karpathy/arxiv_10K_export.zip). Unzip in root folder and fire up flask with `serve.py`.
 
 ### Running online
 
